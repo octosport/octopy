@@ -18,6 +18,7 @@ def _get_power_normalization(k, pi):
 
 
 class ImpliedProbability:
+
     @property
     def implied_probabilities(self):
         return self._implied_probabilities
@@ -82,6 +83,6 @@ class ImpliedProbability:
             implied_probabilities = pi ** k_opt
 
         self._implied_probabilities = implied_probabilities
-        self._margins = pi - self.implied_probabilities_
+        self._margins = pi - self.implied_probabilities
 
         return self

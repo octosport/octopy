@@ -1,5 +1,5 @@
 from scipy.stats import poisson
-from octopy.octopy.utils import assert_positive_int
+from octopy.octopy.utils import assert_positive_int,assert_positive
 
 
 class PoissonDistribution:
@@ -16,6 +16,8 @@ class PoissonDistribution:
             Number of goals the away team is expected to score (away strength).
 
         """
+        assert_positive(home_lambda, "home_lambda should be a positive or null.")
+        assert_positive(away_lambda, "away_lambda should be a positive or null.")
         self.home_lambda = home_lambda
         self.away_lambda = away_lambda
 
@@ -36,8 +38,8 @@ class PoissonDistribution:
         The probability of the result "home_score - away_score".
 
         """
-        assert_positive_int(home_score, "home_score should be a positive integer")
-        assert_positive_int(away_score, "away_score should be a positive integer")
+        assert_positive_int(home_score, "home_score should be a positive or null integer.")
+        assert_positive_int(away_score, "away_score should be a positive or null integer.")
         k_home = home_score
         k_away = away_score
 
