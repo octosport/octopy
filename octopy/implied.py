@@ -1,3 +1,4 @@
+# Load Data
 import numpy as np
 from scipy.optimize import bisect
 
@@ -41,7 +42,8 @@ class ImpliedProbability:
         assert method in [
             "power",
             "shin",
-            "power",
+            "additive",
+            "multiplicative",
         ], "Method {} is not available. Please choose a valid method.".format(method)
         self.method = method
         self._implied_probabilities = None
@@ -67,21 +69,24 @@ class ImpliedProbability:
         self
 
         """
+        try:
+            odds = np.array([home_odd, draw_odd, away_odd])
+            pi = 1 / odds
 
-        odds = np.array([home_odd, draw_odd, away_odd])
-        pi = 1 / odds
-
-        if self.method == "basic":
-            normalization = sum(pi)
-            implied_probabilities = pi / normalization
-        if self.method == "shin":
-            z_opt = bisect(_get_shin_normalization, 0, 1, args=(pi))
-            implied_probabilities = _get_shin_implied_probabilities(z_opt, pi)
-        if self.method == "power":
-            k_opt = bisect(_get_power_normalization, 0, 10, args=(pi))
-            implied_probabilities = pi ** k_opt
-
-        self._implied_probabilities = implied_probabilities
-        self._margins = pi - self.implied_probabilities
-
+            if self.method == "multiplicative":
+                normalization = sum(pi)
+                implied_probabilities = pi / normalization
+            if self.method == "shin":
+                z_opt = bisect(_get_shin_normalization, 0, 10, args=(pi))
+                implied_probabilities = _get_shin_implied_probabilities(z_opt, pi)
+            if self.method == "power":
+                k_opt = bisect(_get_power_normalization, 0, 100, args=(pi))
+                implied_probabilities = pi ** k_opt
+            if self.method == "additive":
+                implied_probabilities = pi + 1 / len(odds) * (1 - sum(pi))
+            self._implied_probabilities = implied_probabilities
+            self._margins = pi - self.implied_probabilities
+        except:
+            self._implied_probabilities = [np.nan] * len(odds)
+            self._margins = [np.nan] * len(odds)
         return self
