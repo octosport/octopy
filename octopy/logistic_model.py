@@ -6,7 +6,9 @@ from sklearn.utils.validation import check_is_fitted
 
 
 class LogisticModel:
-    def fit(self, home_team_name, away_team_name, home_score, away_score, team_names = None):
+    def fit(
+        self, home_team_name, away_team_name, home_score, away_score, team_names=None
+    ):
         """
         Fit a logistic regression model with three classes.
 
@@ -24,11 +26,16 @@ class LogisticModel:
         away_score: list
             A list of away team score
 
+        team_names: list, optional
+            A list of team names that contains all teams. Useful when new teams are not
+            in home_team_name and away_team_name history. When None it default to all teams
+            included in home_team_name and away_team_name.
+
         Attributes
         ----------
 
         team_encoding_: OneHotEncoder
-            A sklearn OneHotEncoder class taht contains he team encoding.
+            A sklearn OneHotEncoder class that contains the team encoding.
 
         model_: LogisticRegression
             A sklearn LogisticRegression model fitted to the data.
@@ -39,13 +46,11 @@ class LogisticModel:
             for x in [home_team_name, away_team_name, home_score, away_score]
         ]
         if team_names is None:
-          team_names = np.array(list(home_team_name) + list(away_team_name)).reshape(
-              -1, 1
-          )
+            team_names = np.array(list(home_team_name) + list(away_team_name)).reshape(
+                -1, 1
+            )
         else:
-          team_names = np.array(team_names).reshape(
-              -1, 1
-          )
+            team_names = np.array(team_names).reshape(-1, 1)
 
         self.team_encoding_ = OneHotEncoder(sparse=False).fit(team_names)
 
@@ -122,7 +127,7 @@ class LogisticModel:
         if pred > 0:
             return str(home_team_name)
         else:
-            return str(home_team_name)
+            return str(away_team_name)
 
     def predict_proba(self, home_team_name, away_team_name):
         """
