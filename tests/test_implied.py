@@ -1,5 +1,5 @@
 import numpy as np
-from ..implied import ImpliedProbability
+from octopy.octopy.implied import ImpliedProbability
 
 
 def test_shin_method():

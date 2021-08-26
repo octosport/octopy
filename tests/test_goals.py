@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from ..goals import PoissonDistribution
+from octopy.octopy.goals import PoissonDistribution
 
 
 def test_proba():
