@@ -119,6 +119,7 @@ class EloRatingNet:
         test_loss = -np.mean(loss_history[dataset.test_index_])
         return train_loss, valid_loss, test_loss
 
+    an_loss(best_p
     def optimise(
             self,
             dataset,
@@ -184,7 +185,7 @@ class EloRatingNet:
                 if i % verbose == 0:
                     print(f'train_loss: {train_loss}, valid_loss: {valid_loss}, test_loss: {test_loss}')
                 stopping = 0
-                best_params = np.copy(params)
+                best_params = jnp.copy(params)
             else:
                 stopping += 1
 
