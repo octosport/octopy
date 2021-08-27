@@ -5,9 +5,7 @@ from tqdm import notebook
 import jax.ops as jop
 from jax import lax
 import numpy as np
-from octopy.octopy.elo.utils import predict_proba, get_log_loss, get_winner
-
-__EPS__ = 1e-12
+from ..elo.utils import predict_proba, get_log_loss, get_winner
 
 
 class EloRatingNet:
@@ -30,8 +28,8 @@ class EloRatingNet:
         def update_ratings(
                 params, home_rating, away_rating, home, away, winner, rating
         ):
-            ha = nn.relu(params["ha"][home])
-            p_home, _, p_away = predict_proba(params, home_rating + ha, away_rating)
+
+            p_home, _, p_away = predict_proba(params, home_rating, away_rating,self.tie)
 
             operand = nn.relu(params["lr"])
             delta_home_d = lax.cond(
@@ -82,7 +80,7 @@ class EloRatingNet:
             home, away = dataset_obs["team_index"][0], dataset_obs["team_index"][1]
             score1, score2 = dataset_obs["scores"][0], dataset_obs["scores"][1]
 
-            p1, pt, p2 = predict_proba(params, rating[home], rating[away])
+            p1, pt, p2 = predict_proba(params, rating[home], rating[away],self.tie)
             loss = get_log_loss(score1, score2, p1, p2, pt)
 
             winner = get_winner(score1, score2)
