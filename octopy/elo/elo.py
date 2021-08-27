@@ -104,7 +104,6 @@ class EloRatingNet:
                 "carry": carry,
                 "loss_history": output[0],
                 "rating": output[1],
-                "probability": output[2],
             }
 
         def train_loss(params, dataset):
