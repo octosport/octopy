@@ -98,7 +98,7 @@ class EloDataset:
     def get_train_split(self):
         return {
             "team_index": self.team_index_[self.train_index_, :],
-            "scores": self.Y[self.train_index_, :],
+            "scores": self.scores_[self.train_index_, :],
         }
 
     def get_dataset(self):
