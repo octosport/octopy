@@ -112,14 +112,16 @@ class EloRatingNet:
 
         return train_loss, scan_loss
 
-    def get_split_losses(self, loss_history, dataset):
+    def get_split_losses(self, loss_history, dataset, round=None):
         loss_history = np.array(loss_history)
         train_loss = -np.mean(loss_history[dataset.train_index_])
         valid_loss = -np.mean(loss_history[dataset.valid_index_])
         test_loss = -np.mean(loss_history[dataset.test_index_])
-        return train_loss, valid_loss, test_loss
+        if round is None:
+            return train_loss, valid_loss, test_loss
+        else:
+            return [np.round(x,round) for x in [train_loss, valid_loss, test_loss]]
 
-    an_loss(best_p
     def optimise(
             self,
             dataset,
@@ -177,7 +179,7 @@ class EloRatingNet:
 
             output = jit_scan_loss(params, full_data)
             loss_history = output["loss_history"]
-            train_loss, valid_loss, test_loss = self.get_split_losses(loss_history, dataset)
+            train_loss, valid_loss, test_loss = self.get_split_losses(loss_history, dataset, 4)
 
             #stopping rules
             if min_loss > valid_loss:
