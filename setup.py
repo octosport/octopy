@@ -2,12 +2,8 @@ from setuptools import setup, find_packages
 
 DISTNAME = "octopy"
 VERSION = "1.0.0"
-DESCRIPTION = (
-    """Octopy is a compagnon Python library for octosport.io. The library offers tools for football (soccer) analytics."""
-)
-LONG_DESCRIPTION = (
-    """Octopy is a compagnon Python library for octosport.io. The library offers tools for football (soccer) analytics."""
-)
+DESCRIPTION = """Octopy is a compagnon Python library for octosport.io. The library offers tools for football (soccer) analytics."""
+LONG_DESCRIPTION = """Octopy is a compagnon Python library for octosport.io. The library offers tools for football (soccer) analytics."""
 AUTHOR = "octosport.io"
 AUTHOR_EMAIL = "contact@octosport.io"
 URL = "https://github.com/octosport/octopy"
