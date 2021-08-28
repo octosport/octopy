@@ -51,7 +51,7 @@ class EloDataset:
         self.team_index_ = np.array(team_index).astype(np.int32)
 
     def split_train_test(self, team_names, scores):
-        '''
+        """
         Split the data for training.
 
         Parameters
@@ -65,7 +65,7 @@ class EloDataset:
         Returns
         -------
 
-        '''
+        """
         self.scores_ = np.array(scores).astype(np.float32)
         self.encode_teams(team_names)
 
@@ -81,9 +81,7 @@ class EloDataset:
             split_type_ = "date"
         else:
             test_idx = int((1 - self.test_fraction) * len(time))
-            train_idx = int(
-                (1 - self.test_fraction - self.valid_fration) * len(time)
-            )
+            train_idx = int((1 - self.test_fraction - self.valid_fration) * len(time))
             test_date = time[test_idx]
             valid_date = time[train_idx]
             split_type_ = "fraction"
@@ -102,5 +100,7 @@ class EloDataset:
         }
 
     def get_dataset(self):
-        assert  hasattr(self,'scores_'), 'split_train_test(team_names, scores) needs to be call first.'
+        assert hasattr(
+            self, "scores_"
+        ), "split_train_test(team_names, scores) needs to be call first."
         return {"team_index": self.team_index_, "scores": self.scores_}

@@ -1,7 +1,9 @@
 import jax.numpy as jnp
 from jax import jit
 from jax import nn
+
 __EPS__ = 1e-12
+
 
 @jit
 def get_log_loss(score1, score2, p1, p2, pt=0):
