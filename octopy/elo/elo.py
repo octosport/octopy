@@ -201,6 +201,6 @@ class EloRatingNet:
         rating_team_A = self.ratings_[teamA]
         rating_team_B = self.ratings_[teamB]
         pA, pD, pB = predict_proba(
-            self.best_params_, rating_team_A=rating_team_A, away_rating=rating_team_B
+            self.best_params_, home_rating=rating_team_A, away_rating=rating_team_B
         )
         return {f"{teamA}": pA, "Draw": pD, f"{teamB}": pB}
