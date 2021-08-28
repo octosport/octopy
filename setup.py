@@ -10,7 +10,7 @@ URL = "https://github.com/octosport/octopy"
 LICENSE = "Apache License, Version 2.0"
 
 
-REQUIREMENTS = ["pandas>=1.1.3", "scipy>=1.5.2", "scikit-learn>=0.23.2", "jax>=0.2.19"]
+REQUIREMENTS = ["pandas>=1.1.3", "scipy>=1.5.2", "scikit-learn>=0.23.2", "jax>=0.2.17"]
 
 if __name__ == "__main__":
     setup(
