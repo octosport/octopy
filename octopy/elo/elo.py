@@ -17,19 +17,19 @@ class EloRatingNet:
         return dict(
             beta=1.0,
             gamma=0.2,
-            lr=0.19,
-            ha=jnp.array([0.0 for k in range(self.n_teams)]),
-            init=jnp.array([100.0 for k in range(self.n_teams)])
+            lr=0.1,
+            init=jnp.array([100.0 for k in range(self.n_teams)]),
         )
 
     def get_train_function(self, keep_rating=True):
-
         @jit
         def update_ratings(
-                params, home_rating, away_rating, home, away, winner, rating
+            params, home_rating, away_rating, home, away, winner, rating
         ):
 
-            p_home, _, p_away = predict_proba(params, home_rating, away_rating,self.tie)
+            p_home, _, p_away = predict_proba(
+                params, home_rating, away_rating, self.tie
+            )
 
             operand = nn.relu(params["lr"])
             delta_home_d = lax.cond(
@@ -41,29 +41,17 @@ class EloRatingNet:
             delta_away_d = -delta_home_d
 
             delta_home_h = lax.cond(
-                winner == 0.0,
-                lambda x: x * (1 - p_home),
-                lambda x: 0.0,
-                operand
+                winner == 0.0, lambda x: x * (1 - p_home), lambda x: 0.0, operand
             )
             delta_away_h = lax.cond(
-                winner == 0.0,
-                lambda x: x * (0 - p_away),
-                lambda x: 0.0,
-                operand
+                winner == 0.0, lambda x: x * (0 - p_away), lambda x: 0.0, operand
             )
 
             delta_home_a = lax.cond(
-                winner == 2.0,
-                lambda x: x * (0 - p_home),
-                lambda x: 0.0,
-                operand
+                winner == 2.0, lambda x: x * (0 - p_home), lambda x: 0.0, operand
             )
             delta_away_a = lax.cond(
-                winner == 2.0,
-                lambda x: x * (1 - p_away),
-                lambda x: 0.0,
-                operand
+                winner == 2.0, lambda x: x * (1 - p_away), lambda x: 0.0, operand
             )
 
             delta_home = delta_home_d + delta_home_h + delta_home_a
@@ -80,7 +68,7 @@ class EloRatingNet:
             home, away = dataset_obs["team_index"][0], dataset_obs["team_index"][1]
             score1, score2 = dataset_obs["scores"][0], dataset_obs["scores"][1]
 
-            p1, pt, p2 = predict_proba(params, rating[home], rating[away],self.tie)
+            p1, pt, p2 = predict_proba(params, rating[home], rating[away], self.tie)
             loss = get_log_loss(score1, score2, p1, p2, pt)
 
             winner = get_winner(score1, score2)
@@ -98,7 +86,7 @@ class EloRatingNet:
             carry = dict()
             carry["params"] = params
             carry["rating"] = init
-            carry, output = lax.scan(inner_loop, carry, dataset)
+            carry, output = lax.scan(inner_loop, carry, dataset, unroll=5)
 
             return {
                 "carry": carry,
@@ -112,24 +100,25 @@ class EloRatingNet:
 
         return train_loss, scan_loss
 
-    def get_split_losses(self, loss_history, dataset ):
+    def get_split_losses(self, loss_history, dataset, round=None):
         loss_history = np.array(loss_history)
         train_loss = -np.mean(loss_history[dataset.train_index_])
         valid_loss = -np.mean(loss_history[dataset.valid_index_])
         test_loss = -np.mean(loss_history[dataset.test_index_])
-
-        return train_loss, valid_loss, test_loss
-
+        if round is None:
+            return train_loss, valid_loss, test_loss
+        else:
+            return [np.round(x, round) for x in [train_loss, valid_loss, test_loss]]
 
     def optimise(
-            self,
-            dataset,
-            learning_rate=0.1,
-            max_step=10000,
-            early_stopping=100,
-            verbose=50,
+        self,
+        dataset,
+        learning_rate=0.1,
+        max_step=10000,
+        early_stopping=100,
+        verbose=50,
     ):
-        '''
+        """
         perform gradient descent optimization.
 
         Parameters
@@ -150,11 +139,9 @@ class EloRatingNet:
         verbose: int
             Print losses ever nth steps.
 
-        '''
+        """
 
-
-
-        train_loss, scan_loss = self.get_train_function(keep_rating=False)
+        train_loss, scan_loss = self.get_train_function(keep_rating=True)
 
         jit_grad = jit(grad(train_loss))
         jit_scan_loss = jit(scan_loss)
@@ -178,13 +165,17 @@ class EloRatingNet:
 
             output = jit_scan_loss(params, full_data)
             loss_history = output["loss_history"]
-            train_loss, valid_loss, test_loss = self.get_split_losses(loss_history, dataset, 4)
+            train_loss, valid_loss, test_loss = self.get_split_losses(
+                loss_history, dataset
+            )
 
-            #stopping rules
+            # stopping rules
             if min_loss > valid_loss:
                 min_loss = valid_loss
                 if i % verbose == 0:
-                    print(f'train_loss: {train_loss:.4f}, valid_loss: {valid_loss:.4f}, test_loss: {test_loss:.4f}')
+                    print(
+                        f"train_loss: {train_loss:.4f}, valid_loss: {valid_loss:.4f}, test_loss: {test_loss:.4f}"
+                    )
                 stopping = 0
                 best_params = params.copy()
             else:
@@ -198,10 +189,18 @@ class EloRatingNet:
 
         output = jit_scan_loss(best_params, full_data)
         loss_history = output["loss_history"]
-        self.params_ = best_params
+        best_params["n_iter"] = stopping
+        self.best_params_ = best_params
         self.loss_path_ = loss_path
         self.loss_history_ = loss_history
         self.output_ = output
 
+        self.ratings_ = dict(zip(dataset.le_.classes_, output["carry"]["rating"]))
 
-
+    def predict_proba(self, teamA, teamB):
+        rating_team_A = self.ratings_[teamA]
+        rating_team_B = self.ratings_[teamB]
+        pA, pD, pB = predict_proba(
+            self.best_params_, rating_team_A=rating_team_A, away_rating=rating_team_B
+        )
+        return {f"{teamA}": pA, "Draw": pD, f"{teamB}": pB}
