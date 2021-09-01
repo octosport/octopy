@@ -18,7 +18,7 @@ class EloRatingNet:
             beta=1.0,
             gamma=0.2,
             lr=0.1,
-            init=jnp.array([100.0 for k in range(self.n_teams)]),
+            init=jnp.array([1000.0 for k in range(self.n_teams)]),
         )
 
     def get_train_function(self, keep_rating=True):
