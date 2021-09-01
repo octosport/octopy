@@ -9,8 +9,8 @@ from ..elo.utils import predict_proba, get_log_loss, get_winner
 
 
 class EloRatingNet:
-    def __init__(self, n_teams, tie=True):
-        self.tie = tie
+    def __init__(self, n_teams, has_tie=True):
+        self.has_tie = has_tie
         self.n_teams = n_teams
 
     def init_params(self):
@@ -28,7 +28,7 @@ class EloRatingNet:
         ):
 
             p_home, _, p_away = predict_proba(
-                params, home_rating, away_rating, self.tie
+                params, home_rating, away_rating, self.has_tie
             )
 
             operand = nn.relu(params["lr"])
@@ -68,7 +68,7 @@ class EloRatingNet:
             home, away = dataset_obs["team_index"][0], dataset_obs["team_index"][1]
             score1, score2 = dataset_obs["scores"][0], dataset_obs["scores"][1]
 
-            p1, pt, p2 = predict_proba(params, rating[home], rating[away], self.tie)
+            p1, pt, p2 = predict_proba(params, rating[home], rating[away], self.has_tie)
             loss = get_log_loss(score1, score2, p1, p2, pt)
 
             winner = get_winner(score1, score2)
@@ -201,6 +201,6 @@ class EloRatingNet:
         rating_team_A = self.ratings_[teamA]
         rating_team_B = self.ratings_[teamB]
         pA, pD, pB = predict_proba(
-            self.best_params_, home_rating=rating_team_A, away_rating=rating_team_B
+            self.best_params_, home_rating=rating_team_A, away_rating=rating_team_B,has_tie=self.has_tie
         )
         return {f"{teamA}": pA, "Draw": pD, f"{teamB}": pB}
