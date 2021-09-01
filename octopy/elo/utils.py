@@ -15,12 +15,12 @@ def get_log_loss(score1, score2, p1, p2, pt=0):
 
 
 @jit
-def predict_proba(params, home_rating, away_rating, tie):
+def predict_proba(params, home_rating, away_rating, has_tie):
     dr = (home_rating - away_rating) * params["beta"]
-    gamma = nn.relu(params["gamma"]) * tie
+    gamma = nn.relu(params["gamma"]) * has_tie
     pA = jnp.clip(nn.sigmoid(dr - gamma), __EPS__, 1 - __EPS__)
     pB = jnp.clip(nn.sigmoid(-dr - gamma), __EPS__, 1 - __EPS__)
-    pD = nn.relu(1.0 - pA - pB) * tie
+    pD = nn.relu(1.0 - pA - pB) * has_tie
     s = pA + pB + pD
     return pA / s, pD / s, pB / s
 
