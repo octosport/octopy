@@ -8,6 +8,18 @@ import numpy as np
 from ..elo.utils import get_log_loss, get_winner
 
 
+@jit
+def predict_proba(params, home_rating, away_rating, has_tie, eps=1e-12):
+    """Predict step"""
+    dr = (home_rating - away_rating) * params["beta"]
+    gamma = nn.relu(params["gamma"]) * has_tie
+    pA = jnp.clip(nn.sigmoid(dr - gamma), eps, 1 - eps)
+    pB = jnp.clip(nn.sigmoid(-dr - gamma), eps, 1 - eps)
+    pD = nn.relu(1.0 - pA - pB) * has_tie
+    s = pA + pB + pD
+    return [float(x) for x in [pA / s, pD / s, pB / s]]
+
+
 class EloRatingNet:
     """
     Train Elo rating model using recurrent neural network.
@@ -75,17 +87,6 @@ class EloRatingNet:
             rating = jop.index_add(rating, home, np.tanh(delta_home))
             rating = jop.index_add(rating, away, np.tanh(delta_away))
             return rating
-
-        @jit
-        def predict_proba(params, home_rating, away_rating, has_tie, eps=1e-12):
-            """Predict step"""
-            dr = (home_rating - away_rating) * params["beta"]
-            gamma = nn.relu(params["gamma"]) * has_tie
-            pA = jnp.clip(nn.sigmoid(dr - gamma), eps, 1 - eps)
-            pB = jnp.clip(nn.sigmoid(-dr - gamma), eps, 1 - eps)
-            pD = nn.relu(1.0 - pA - pB) * has_tie
-            s = pA + pB + pD
-            return [float(x) for x in [pA / s, pD / s, pB / s]]
 
         def scan_function(carry, dataset, keep_rating=keep_rating):
             """Predict and rate for each data in the dataset."""
