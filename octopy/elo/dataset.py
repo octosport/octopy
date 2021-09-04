@@ -43,6 +43,7 @@ class EloDataset:
         self.valid_fration = valid_fration
 
     def encode_teams(self, team_names):
+        """Encode team name."""
         self.le_ = LabelEncoder().fit(list(team_names[:, 0]) + list(team_names[:, 1]))
         team_index = np.zeros_like(team_names)
         team_index[:, 0] = self.le_.transform(team_names[:, 0])
