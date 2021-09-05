@@ -38,42 +38,42 @@ class EloRatingNet:
     def get_train_function(self, keep_rating=True):
         @jit
         def update_ratings(
-                params, home_rating, away_rating, home, away, winner, rating
+                params, teamA_rating, teamB_rating, teamA_idx, teamB_idx, winner, rating
         ):
             '''Update rating step'''
 
-            p_home, _, p_away = predict_proba(
-                params, home_rating, away_rating, self.has_tie
+            pA, _, pB = predict_proba(
+                params, teamA_rating, teamB_rating, self.has_tie
             )
 
             operand = nn.relu(params["lr"])
-            delta_home_d = lax.cond(
+            delta_A_d = lax.cond(
                 winner == 1.0,
-                lambda x: x * (p_away - p_home),
+                lambda x: x * (pB - pA),
                 lambda x: 0.0,
                 operand,
             )
-            delta_away_d = -delta_home_d
+            delta_B_d = -delta_A_d
 
-            delta_home_h = lax.cond(
-                winner == 0.0, lambda x: x * (1 - p_home), lambda x: 0.0, operand
+            delta_A_win = lax.cond(
+                winner == 0.0, lambda x: x * (1 - pA), lambda x: 0.0, operand
             )
-            delta_away_h = lax.cond(
-                winner == 0.0, lambda x: x * (0 - p_away), lambda x: 0.0, operand
-            )
-
-            delta_home_a = lax.cond(
-                winner == 2.0, lambda x: x * (0 - p_home), lambda x: 0.0, operand
-            )
-            delta_away_a = lax.cond(
-                winner == 2.0, lambda x: x * (1 - p_away), lambda x: 0.0, operand
+            delta_B_lose = lax.cond(
+                winner == 0.0, lambda x: x * (0 - pB), lambda x: 0.0, operand
             )
 
-            delta_home = delta_home_d + delta_home_h + delta_home_a
-            delta_away = delta_away_d + delta_away_h + delta_away_a
+            delta_A_lose = lax.cond(
+                winner == 2.0, lambda x: x * (0 - pA), lambda x: 0.0, operand
+            )
+            delta_B_win = lax.cond(
+                winner == 2.0, lambda x: x * (1 - pB), lambda x: 0.0, operand
+            )
 
-            rating = jop.index_add(rating, home, jnp.tanh(delta_home))
-            rating = jop.index_add(rating, away, jnp.tanh(delta_away))
+            delta_A = delta_A_d + delta_A_win + delta_A_lose
+            delta_B = delta_B_d + delta_B_lose + delta_B_win
+
+            rating = jop.index_add(rating, teamA_idx, jnp.tanh(delta_A))
+            rating = jop.index_add(rating, teamB_idx, jnp.tanh(delta_B))
             return rating
 
         def scan_function(carry, dataset, keep_rating=keep_rating):
@@ -82,15 +82,15 @@ class EloRatingNet:
             rating = carry["rating"]
             params = carry["params"]
 
-            home, away = dataset["team_index"][0], dataset["team_index"][1]
+            teamA_idx, teamB_idx = dataset["team_index"][0], dataset["team_index"][1]
             score1, score2 = dataset["scores"][0], dataset["scores"][1]
 
-            p1, pt, p2 = predict_proba(params, rating[home], rating[away], self.has_tie)
+            p1, pt, p2 = predict_proba(params, rating[teamA_idx], rating[teamB_idx], self.has_tie)
             loss = get_log_loss(score1, score2, p1, p2, pt)
 
             winner = get_winner(score1, score2)
             carry["rating"] = update_ratings(
-                params, rating[home], rating[away], home, away, winner, rating
+                params, rating[teamA_idx], rating[teamB_idx], teamA_idx, teamB_idx, winner, rating
             )
 
             if keep_rating:
@@ -104,7 +104,7 @@ class EloRatingNet:
             carry = dict()
             carry["params"] = params
             carry["rating"] = init
-            carry, output = lax.scan(scan_function, carry, dataset, unroll=5)
+            carry, output = lax.scan(scan_function, carry, dataset)
 
             return {
                 "carry": carry,
@@ -237,9 +237,9 @@ class EloRatingNet:
         A dict containing the probabilities.
 
         '''
-        rating_team_A = self.ratings_[teamA]
-        rating_team_B = self.ratings_[teamB]
+        teamA_rating = self.ratings_[teamA]
+        teamB_rating = self.ratings_[teamB]
         pA, pD, pB = predict_proba(
-            self.best_params_, home_rating=rating_team_A, away_rating=rating_team_B,has_tie=self.has_tie
+            self.best_params_, teamA_rating=teamA_rating, teamB_rating=teamB_rating,has_tie=self.has_tie
         )
         return {f"{teamA}": pA, "Draw": pD, f"{teamB}": pB}
