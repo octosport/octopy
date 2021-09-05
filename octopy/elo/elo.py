@@ -38,7 +38,7 @@ class EloRatingNet:
     def get_train_function(self, keep_rating=True):
         @jit
         def update_ratings(
-            params, home_rating, away_rating, home, away, winner, rating
+                params, home_rating, away_rating, home, away, winner, rating
         ):
             '''Update rating step'''
 
@@ -72,8 +72,8 @@ class EloRatingNet:
             delta_home = delta_home_d + delta_home_h + delta_home_a
             delta_away = delta_away_d + delta_away_h + delta_away_a
 
-            rating = jop.index_add(rating, home, np.tanh(delta_home))
-            rating = jop.index_add(rating, away,  np.tanh(delta_away))
+            rating = jop.index_add(rating, home, jnp.tanh(delta_home))
+            rating = jop.index_add(rating, away, jnp.tanh(delta_away))
             return rating
 
         def scan_function(carry, dataset, keep_rating=keep_rating):
@@ -114,6 +114,7 @@ class EloRatingNet:
 
         def negative_average_log_loss(params, dataset):
             output = scan_loss(params, dataset)
+
             return -jnp.mean(output["loss_history"])
 
         return negative_average_log_loss, scan_loss

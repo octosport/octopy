@@ -5,8 +5,8 @@ from jax import nn
 __EPS__ = 1e-12
 
 @jit
-def predict_proba(params, home_rating, away_rating, has_tie):
-    dr = (home_rating - away_rating) * params["beta"]
+def predict_proba(params, teamA_rating, teamB_rating, has_tie):
+    dr = (teamA_rating - teamB_rating) * params["beta"]
     gamma = nn.relu(params["gamma"]) * has_tie
     pA = jnp.clip(nn.sigmoid(dr - gamma), __EPS__, 1 - __EPS__)
     pB = jnp.clip(nn.sigmoid(-dr - gamma), __EPS__, 1 - __EPS__)
@@ -26,6 +26,6 @@ def get_log_loss(scoreA, scoreB, pA, pB, pD=0):
 
 
 @jit
-def get_winner(A, B):
+def get_winner(scoreA, scoreB):
     '''Return an interger that represents who won the match: 0 for A, 1 for D and 2 for B'''
-    return (A == B) * 1.0 + (A < B) * 2.0
+    return (scoreA == scoreB) * 1.0 + (scoreA < scoreB) * 2.0
