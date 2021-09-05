@@ -5,23 +5,11 @@ from tqdm import notebook
 import jax.ops as jop
 from jax import lax
 import numpy as np
-from ..elo.utils import get_log_loss, get_winner
-
-
-@jit
-def predict_proba(params, home_rating, away_rating, has_tie, eps=1e-12):
-    """Predict step"""
-    dr = (home_rating - away_rating) * params["beta"]
-    gamma = nn.relu(params["gamma"]) * has_tie
-    pA = jnp.clip(nn.sigmoid(dr - gamma), eps, 1 - eps)
-    pB = jnp.clip(nn.sigmoid(-dr - gamma), eps, 1 - eps)
-    pD = nn.relu(1.0 - pA - pB) * has_tie
-    s = pA + pB + pD
-    return [float(x) for x in [pA / s, pD / s, pB / s]]
+from ..elo.utils import predict_proba, get_log_loss, get_winner
 
 
 class EloRatingNet:
-    """
+    '''
     Train Elo rating model using recurrent neural network.
 
     Parameters
@@ -32,14 +20,14 @@ class EloRatingNet:
     has_tie: bool
         If True the probability of a draw if also computed
 
-    """
+    '''
 
     def __init__(self, n_teams, has_tie=True):
         self.has_tie = has_tie
         self.n_teams = n_teams
 
     def init_params(self):
-        """Set of model initial parameters."""
+        '''Set of model initial parameters.'''
         return dict(
             beta=1.0,
             gamma=0.2,
@@ -52,7 +40,7 @@ class EloRatingNet:
         def update_ratings(
             params, home_rating, away_rating, home, away, winner, rating
         ):
-            """Update rating step"""
+            '''Update rating step'''
 
             p_home, _, p_away = predict_proba(
                 params, home_rating, away_rating, self.has_tie
@@ -85,11 +73,11 @@ class EloRatingNet:
             delta_away = delta_away_d + delta_away_h + delta_away_a
 
             rating = jop.index_add(rating, home, np.tanh(delta_home))
-            rating = jop.index_add(rating, away, np.tanh(delta_away))
+            rating = jop.index_add(rating, away,  np.tanh(delta_away))
             return rating
 
         def scan_function(carry, dataset, keep_rating=keep_rating):
-            """Predict and rate for each data in the dataset."""
+            '''Predict and rate for each data in the dataset.'''
 
             rating = carry["rating"]
             params = carry["params"]
@@ -111,7 +99,7 @@ class EloRatingNet:
                 return carry, [loss, jnp.nan]
 
         def scan_loss(params, dataset):
-            """Predict and rate the entire dataset given the paramters."""
+            '''Predict and rate the entire dataset given the paramters.'''
             init = params["init"]
             carry = dict()
             carry["params"] = params
@@ -171,9 +159,7 @@ class EloRatingNet:
 
         """
 
-        neg_average_log_loss_fn, scan_loss_fn = self.get_train_function(
-            keep_rating=True
-        )
+        neg_average_log_loss_fn, scan_loss_fn = self.get_train_function(keep_rating=True)
 
         jit_nll_grad_fn = jit(grad(neg_average_log_loss_fn))
         jit_scan_loss_fn = jit(scan_loss_fn)
@@ -233,7 +219,7 @@ class EloRatingNet:
         self.ratings_ = dict(zip(dataset.le_.classes_, output["carry"]["rating"]))
 
     def predict_proba(self, teamA, teamB):
-        """
+        '''
         Predict the probability of wining for each team. If self.tie=True, the probability of draw is added.
 
         Parameters
@@ -246,15 +232,13 @@ class EloRatingNet:
 
         Returns
         -------
+
         A dict containing the probabilities.
 
-        """
+        '''
         rating_team_A = self.ratings_[teamA]
         rating_team_B = self.ratings_[teamB]
         pA, pD, pB = predict_proba(
-            self.best_params_,
-            home_rating=rating_team_A,
-            away_rating=rating_team_B,
-            has_tie=self.has_tie,
+            self.best_params_, home_rating=rating_team_A, away_rating=rating_team_B,has_tie=self.has_tie
         )
         return {f"{teamA}": pA, "Draw": pD, f"{teamB}": pB}
