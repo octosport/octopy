@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from octopy.metrics import compute_1x2_log_loss, compute_1x2_hit_ratio
+from octopy.octopy.metrics import compute_1x2_log_loss, compute_1x2_hit_ratio
 
 
 def test_log_loss():
