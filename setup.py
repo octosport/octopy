@@ -10,7 +10,7 @@ URL = "https://github.com/octosport/octopy"
 LICENSE = "Apache License, Version 2.0"
 
 
-REQUIREMENTS = ["pandas>=1.1.3", "scipy>=1.5.2", "scikit-learn>=0.23.2", "jax>=0.2.17"]
+REQUIREMENTS = ["pandas>=1.1.3", "scipy>=1.5.2", "scikit-learn>=0.23.2", "jax>=0.3.0"]
 
 if __name__ == "__main__":
     setup(
@@ -27,5 +27,5 @@ if __name__ == "__main__":
         include_package_data=True,
         zip_safe=False,
         install_requires=REQUIREMENTS,
-        classifiers=["Programming Language :: Python :: 3.4"],
+        classifiers=["Programming Language :: Python :: 3.7"],
     )
