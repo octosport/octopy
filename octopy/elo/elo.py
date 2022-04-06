@@ -72,8 +72,10 @@ class EloRatingNet:
             delta_A = delta_A_d + delta_A_win + delta_A_lose
             delta_B = delta_B_d + delta_B_lose + delta_B_win
 
-            rating = jop.index_add(rating, teamA_idx, jnp.tanh(delta_A))
-            rating = jop.index_add(rating, teamB_idx, jnp.tanh(delta_B))
+
+            rating = rating.at[teamA_idx].add(jnp.tanh(delta_A))
+            rating = rating.at[teamB_idx].add(jnp.tanh(delta_B))
+
             return rating
 
         def scan_function(carry, dataset, keep_rating=keep_rating):
